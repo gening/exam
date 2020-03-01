@@ -1,12 +1,41 @@
 //
 // Created by Ning Ge on 2018/7/12.
 //
+
 #include <string>
 #include <vector>
 #include <iostream> // cout
 #include <gtest/gtest.h>
 
-using namespace std;
+using namespace std; //在工程中不推荐使用 using namespace 命名空间; 的指令
+
+struct Event {
+    bool onA;
+    bool onB;
+};
+
+static Event events[] = { {true, true}, {false, false}, {true, false}, {false, true} };
+
+bool LookupEvent(Event &e) {
+    e = events[3];
+    return true;
+}
+
+bool CallEvent() {
+    Event thisEvent;
+    LookupEvent(thisEvent);
+    bool ret = thisEvent.onA;
+    return ret;
+}
+
+void PrintEvent() {
+    bool ret = CallEvent();
+    cout << ret << endl;
+}
+
+TEST(Class, PrintEvent) {
+    PrintEvent();
+}
 
 // Copy constructor
 struct Entity {
@@ -267,6 +296,24 @@ void DeclareArraySize() {
 
 TEST(Array, DeclareArraySize) {
     DeclareArraySize();
+}
+
+void ReferenceRightValue() {
+    string s1 = "Test";
+    // non-const lvalue reference cannot bind to a temporary value
+    // string& r2 = s1 + s1;  // 左值需要在内存中有实体 ，而不能指向临时变量。
+    const string& r2 = s1 + s1;  // 可行：到常值的左值引用延长生存期
+    // 右值引用可以转为 const 修饰的左值引用
+    // 右值在CPU寄存器中
+    string&& r3 = s1 + s1;  // 可行：右值引用延长生存期
+    r3 += "Test";  // 可行：右值引用延长生存期
+    cout << s1 << endl;
+    cout << r2 << endl;
+    cout << r3 << endl;
+}
+
+TEST(Reference, ReferenceRightValue) {
+    ReferenceRightValue();
 }
 
 // main

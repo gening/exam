@@ -33,9 +33,10 @@ public:
     }
 
 private:
-    // { t1 : [sa, sb]),
-    //   t2 : [sc, sd, se]),
-    //   ... }
+    //
+    // _lookupTable = { t1 : [sa, sb],
+    //                  t2 : [sc, sd, se],
+    //                  ... }
     std::map<const K, std::vector<V>> _lookupTable;
 };
 
