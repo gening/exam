@@ -3,36 +3,39 @@
 #include <string>
 
 enum class Side : char {
-    Buy = 'B',
-    Sell = 'S'
+    BUY = 'B',
+    SELL = 'S'
 };
 
 enum class OrderType {
-    Limit,
+    LIMIT,
     IOC, //Immediate-Or-Cancel
 };
 
-struct Order {
+class Order {
+public:
     std::string orderId;
     Side side;
     std::string symbol;
     OrderType orderType;
     int price;
     int qty;
-    
+
     Order(std::string& orderId,
           Side side,
           std::string& symbol,
           OrderType orderType,
           int price,
-          int qty) {
-        this->orderId = orderId;
-        this->side = side;
-        this->symbol = symbol;
-        this->orderType = orderType;
-        this->price = price;
-        this->qty = qty;
-    }
+          int qty)
+          : orderId(orderId)
+          , side(side)
+          , symbol(symbol)
+          , orderType(orderType)
+          , price(price)
+          , qty(qty)
+          {};
+
+    virtual ~Order() = default;
     
     std::string toString() const {
         // Format: 'qty@price#orderId'
@@ -47,7 +50,7 @@ struct Order {
     }
 
     bool hasPrice() const {
-        return orderType == OrderType::Limit;
+        return orderType == OrderType::LIMIT;
     }
 };
 
@@ -56,14 +59,14 @@ protected:
     std::vector<Order> buyOrders;
     std::vector<Order> sellOrders;
 
-    void insert(const Order& order) {
+    void insert(Order& order) {
         if (order.qty > 0) {
-            std::vector<Order>& orders = (order.side == Side::Buy ? buyOrders : sellOrders);
+            std::vector<Order>& orders = (order.side == Side::BUY ? buyOrders : sellOrders);
             auto it = orders.begin();
             for ( ; it != orders.end(); ++it) {
                 if ((!order.hasPrice() && (*it).hasPrice()) ||
-                    (order.side == Side::Buy && order.price > (*it).price) ||
-                    (order.side == Side::Sell && order.price < (*it).price)) {
+                    (order.side == Side::BUY && order.price > (*it).price) ||
+                    (order.side == Side::SELL && order.price < (*it).price)) {
                     orders.insert(it, order);
                     break;
                 }
@@ -77,11 +80,11 @@ protected:
 
     void match(Order& order) {
         // Locate opposite orders
-        std::vector<Order>& opposites = (order.side == Side::Buy ? sellOrders : buyOrders);
+        std::vector<Order>& opposites = (order.side == Side::BUY ? sellOrders : buyOrders);
         while (!opposites.empty() && order.qty > 0 &&
                (!order.hasPrice() ||
-                (order.side == Side::Sell && order.price <= opposites[0].price) ||
-                (order.side == Side::Buy && order.price >= opposites[0].price))) {
+                (order.side == Side::SELL && order.price <= opposites[0].price) ||
+                (order.side == Side::BUY && order.price >= opposites[0].price))) {
             // matched
             if (order.qty < opposites[0].qty) {
                 opposites[0].qty -= order.qty;
@@ -96,7 +99,7 @@ protected:
 
     bool deleteOrder(const std::string& orderId, const Side side) {
         bool deleted = false;
-        std::vector<Order>& orders = (side == Side::Buy ? buyOrders : sellOrders);
+        std::vector<Order>& orders = (side == Side::BUY ? buyOrders : sellOrders);
         for (auto it = orders.begin(); it != orders.end(); ++it) {
             if ((*it).orderId == orderId) {
                 orders.erase(it);
@@ -107,9 +110,9 @@ protected:
         return deleted;
     }
 
-    void print(const Side side) {
+    void print(const Side side) const {
         // Format: "Side: [..., ...]"
-        std::vector<Order>& orders = (side == Side::Buy ? buyOrders : sellOrders);
+        const std::vector<Order>& orders = (side == Side::BUY ? buyOrders : sellOrders);
         std::cout << (char)side << ": [";
         for (int i = 0; i < orders.size(); i++) {
             std::cout << orders[i].toString();
@@ -120,9 +123,12 @@ protected:
         std::cout << "]" << std::endl;
     }
 
-
 public:
     OrderBook() = default;
+
+    OrderBook(const OrderBook&) = delete;
+    OrderBook(OrderBook&&) = delete;
+
     ~OrderBook() = default;
 
     void addOrder(Order& order) {
@@ -133,16 +139,16 @@ public:
     }
 
     bool deleteOrder(const std::string& orderId) {
-        bool deleted = deleteOrder(orderId, Side::Sell);
+        bool deleted = deleteOrder(orderId, Side::SELL);
         if (!deleted) {
-            deleted = deleteOrder(orderId, Side::Buy);
+            deleted = deleteOrder(orderId, Side::BUY);
         }
         return deleted;
     }
 
-    void print() {
-        print(Side::Buy);
-        print(Side::Sell);
+    void print() const {
+        print(Side::BUY);
+        print(Side::SELL);
     }
 };
 
@@ -167,17 +173,19 @@ int main() {
                 price = "0";
                 orderType = OrderType::IOC;
             } else {
-                orderType = OrderType::Limit;
+                orderType = OrderType::LIMIT;
             }
             Order order(orderId, (Side) side, symbol, orderType, std::stoi(price), qty);
-            // std::cout << "debug : " << order.toString();
+            std::cout << "debug : New Single Order " << order.toString();
+            // Here must support copy-constructor to maintain its member values.
             orderBook.addOrder(order);
-            // std::cout << " " << order.toString() << std::endl;
+            std::cout << " " << order.toString() << std::endl;
+            // `order` instance is out of scope and will be destroyed, unless we use `new` to initialise an object.
         } else if (action == "CXL") {
             std::cin >> orderId;
             orderBook.deleteOrder(orderId);
         }
-        // std::cout << "debug : "; orderBook.print();
+        std::cout << "debug : Order Book" << std::endl; orderBook.print();
 
         std::cin >> action;
     }
@@ -185,3 +193,14 @@ int main() {
     orderBook.print();
     return 0;
 }
+
+/*
+SUB OID1 B foo  7  450
+SUB OID2 B foo 10 1000
+SUB OID3 S foo 12  400
+SUB OID4 S foo 12  250
+SUB OID5 B foo  6  500
+SUB OID6 S foo 11  200
+SUB OID7 B foo 10  350
+END
+ */
