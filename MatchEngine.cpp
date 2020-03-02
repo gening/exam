@@ -194,7 +194,7 @@ int main() {
     return 0;
 }
 
-/*
+/* Test case:
 SUB OID1 B foo  7  450
 SUB OID2 B foo 10 1000
 SUB OID3 S foo 12  400
