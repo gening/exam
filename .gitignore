@@ -1,5 +1,12 @@
-cmake-build-debug/
+# VS Code
+.vscode/
+build/
+*.dSYM/
+
+# PyCharm
 .idea/
+cmake-build-debug/
+
 .DS_Store
 *~
 *.swp
