@@ -121,12 +121,25 @@ const char *ReturnCstr(char *p1) {
     // end the lifetime of s1
 }
 
+/*
+const char * ReturnCstr(char *p1) {
+    char result[200];
+    memset(result, 0, sizeof(result));
+    string s1 = p1;
+    strcpy(result, s1.c_str());
+    return result;
+}
+*/
+
 string ReturnString(char *p3) {
     string s3 = p3;
     return s3;
     // end the lifetime of s3
 }
 
+/*
+string的c_str()返回的指针是由string管理的，它的生命期是string对象的生命期。
+c_str()返回的是一个临时指针，不能对其进行操作(只能对其拷贝）
 void MissingString() {
     const char *c0 = "This is a string.";
 
@@ -175,6 +188,7 @@ void MissingString() {
 TEST(Cast, MissingString) {
     MissingString();
 }
+*/
 
 // CastString
 void CastString() {
@@ -301,7 +315,7 @@ TEST(Array, DeclareArraySize) {
 void ReferenceRightValue() {
     string s1 = "Test";
     // non-const lvalue reference cannot bind to a temporary value
-    // string& r2 = s1 + s1;  // 左值需要在内存中有实体 ，而不能指向临时变量。
+    // string& r2 = s1 + s1;  // 左值需要在内存中有实体，而不能指向临时变量。
     const string& r2 = s1 + s1;  // 可行：到常值的左值引用延长生存期
     // 右值引用可以转为 const 修饰的左值引用
     // 右值在CPU寄存器中
